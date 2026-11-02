@@ -1,33 +1,28 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
-    const mod = b.addModule("zig_spirv", .{
-        .root_source_file = b.path("src/root.zig"),
-        .target = target,
+    // SPIR-V target for Vulkan
+    const shader_target = b.resolveTargetQuery(.{
+        .cpu_arch = .spirv32,
+        .os_tag = .vulkan,
     });
 
-    const exe = b.addExecutable(.{
-        .name = "zig_spirv",
+    // Build shader.zig to shader.spv
+    const shader = b.addObject(.{
+        .name = "shader",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src/main.zig"),
-            .target = target,
-            .optimize = optimize,
-            .imports = &.{
-                .{ .name = "zig_spirv", .module = mod },
-            },
+            .root_source_file = b.path("src/shader.zig"),
+            .target = shader_target,
+            .optimize = .ReleaseFast,
         }),
+        .use_llvm = false,
     });
 
-    b.installArtifact(exe);
+    // Install to zig-out/bin/shader.spv
+    const install_shader = b.addInstallFileWithDir(shader.getEmittedBin(), .bin, "shader.spv");
+    b.getInstallStep().dependOn(&install_shader.step);
 
-    const run_step = b.step("run", "Run the app");
-
-    const run_cmd = b.addRunArtifact(exe);
-    run_step.dependOn(&run_cmd.step);
-
-    run_cmd.step.dependOn(b.getInstallStep());
-
-    run_cmd.addPassthruArgs();
+    // Build step for shader compilation
+    const shader_step = b.step("shader", "Compile src/shader.zig to zig-out/bin/shader.spv");
+    shader_step.dependOn(&install_shader.step);
 }
