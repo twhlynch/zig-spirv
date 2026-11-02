@@ -36,3 +36,5 @@ float wave = 0.5 + 0.5 * sin(radius * 28.0 - uv.x * 9.0 + uv.y * 5.0)
 
 fragColor = vec4(texel.r * wave, texel.g * (1.0 - wave), texel.b * (0.5 + 0.5 * wave), 1.0)
 ```
+
+<p align="center"><img src="shader.jpeg" width="320" height="320" /></p>
